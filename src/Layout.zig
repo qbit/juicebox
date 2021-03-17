@@ -77,8 +77,14 @@ fn find(self: *LayoutManager, handle: x.protocol.Types.Window) ?*Workspace {
 /// workspace and screen to make it 'visible'.
 pub fn mapWindow(self: *LayoutManager, window: Window) !void {
     const workspace = self.active();
-    try workspace.add(self.gpa, window);
 
+    // some windows will allocate twice (like emacs)
+    if (workspace.contains(window.handle)) {
+        log.debug("Found existing window {d} on workspace {d}, removing", .{ window.handle, workspace.id });
+        _ = workspace.remove(window.handle).?;
+    }
+
+    try workspace.add(self.gpa, window);
     try self.remapWindows(workspace);
 
     // Listen to events
